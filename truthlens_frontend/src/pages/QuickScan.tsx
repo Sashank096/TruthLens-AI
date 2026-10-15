@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, UploadCloud, ShieldCheck, AlertCircle, Loader2, Sparkles, Flame, Waves, Radio, Camera, Award } from 'lucide-react';
+import { Search, UploadCloud, ShieldCheck, AlertCircle, Loader2, Sparkles, Flame, Waves, Radio, Camera, Award, Download } from 'lucide-react';
 import { RiskMeter } from '../components/RiskMeter';
 import { VerifiedFactsCard } from '../components/VerifiedFactsCard';
 import { ElaViewer } from '../components/ElaViewer';
@@ -13,6 +13,7 @@ import {
   calculateBrowserSha256, extractBrowserMetadata, runBrowserEla, 
   runBrowserFrequencyAndNoise, BROWSER_BENCHMARKS 
 } from '../services/browserForensics';
+import { downloadCaseReport } from '../services/pdfReportGenerator';
 
 export const QuickScan: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -148,6 +149,34 @@ export const QuickScan: React.FC = () => {
     e.preventDefault();
   };
 
+  const handleDownloadScanPdf = async () => {
+    if (!scanResult) return;
+    const dummyCase: any = {
+      id: 'triage_' + Math.random().toString(36).substring(2, 8),
+      case_number: `TL-TRIAGE-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}`,
+      title: `Forensic Triage: ${scanResult.file_name}`,
+      examiner: 'Field Forensic Examiner',
+      priority: scanResult.risk_score >= 70 ? 'High' : 'Standard',
+      status: 'Triage Completed',
+      created_at: new Date().toISOString(),
+      evidence: [{
+        file_name: scanResult.file_name,
+        file_size: scanResult.file_size,
+        sha256_hash: scanResult.sha256_hash
+      }],
+      custody_logs: [
+        {
+          timestamp: new Date().toISOString(),
+          action: 'TRIAGE_SCAN_COMPLETED',
+          actor: 'TruthLens Forensic Engine',
+          details: `Calculated SHA-256 ${scanResult.sha256_hash} and executed multi-layer heuristics.`
+        }
+      ],
+      forensic_results: [scanResult]
+    };
+    await downloadCaseReport(dummyCase, scanResult);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
@@ -220,6 +249,25 @@ export const QuickScan: React.FC = () => {
       {scanResult && (
         <div className="space-y-6">
           
+          {/* Triage Overview Bar with PDF Download */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-navy-900 border border-slate-800">
+            <div>
+              <div className="text-[10px] font-mono text-cyan-400 font-bold uppercase tracking-wider">
+                Instant Forensic Triage Complete
+              </div>
+              <h3 className="text-sm font-bold text-white truncate max-w-sm sm:max-w-md">
+                {scanResult.file_name}
+              </h3>
+            </div>
+            <button
+              onClick={handleDownloadScanPdf}
+              className="flex items-center justify-center space-x-1.5 px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-navy-950 font-bold text-xs tracking-wide shadow-md shadow-cyan-500/20 transition-all cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Download PDF Dossier</span>
+            </button>
+          </div>
+
           {/* Quick Sub-navigation */}
           <div className="border-b border-slate-800 overflow-x-auto pb-2 scrollbar-none">
             <div className="flex space-x-2 pb-1">

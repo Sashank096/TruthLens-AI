@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { 
   ArrowLeft, Download, Eye, FileText, Flame, Waves, Radio, 
-  Camera, Award, Search, ShieldCheck, Clock, Save, Edit3, CheckCircle2, AlertTriangle, Printer
+  Camera, Award, Search, ShieldCheck, Clock, Save, Edit3, CheckCircle2, AlertTriangle, Printer, Loader2
 } from 'lucide-react';
 import { Case, ForensicResult } from '../types';
 import { RiskMeter } from '../components/RiskMeter';
@@ -15,6 +15,7 @@ import { CandidateMatches } from '../components/CandidateMatches';
 import { CustodyTimeline } from '../components/CustodyTimeline';
 import { getApiBaseUrl, resolveAssetUrl } from '../services/api';
 import { getLocalCaseById, saveLocalCase } from '../services/browserForensics';
+import { downloadCaseReport, getCasePdfPreviewUrl } from '../services/pdfReportGenerator';
 
 interface CaseDetailProps {
   caseId: string;
@@ -31,6 +32,11 @@ export const CaseDetail: React.FC<CaseDetailProps> = ({ caseId, onBack }) => {
   const [caseStatus, setCaseStatus] = useState<string>('Under Investigation');
   const [isSavingNotes, setIsSavingNotes] = useState<boolean>(false);
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+
+  // PDF report states
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState<boolean>(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState<boolean>(false);
 
   const fetchCaseDetails = async () => {
     const base = getApiBaseUrl();
@@ -149,10 +155,35 @@ export const CaseDetail: React.FC<CaseDetailProps> = ({ caseId, onBack }) => {
     );
   }
 
-  const forensicResult: ForensicResult | undefined = caseData.forensic_results?.[0];
-  const evidenceItem = caseData.evidence?.[0];
+  const forensicResult: ForensicResult | undefined = caseData?.forensic_results?.[0];
+  const evidenceItem = caseData?.evidence?.[0];
   const originalImageUrl = evidenceItem ? resolveAssetUrl(evidenceItem.storage_rel_path) : '';
   const base = getApiBaseUrl();
+
+  const handleDownloadPdf = async () => {
+    if (!caseData) return;
+    setIsDownloadingPdf(true);
+    try {
+      await downloadCaseReport(caseData, forensicResult);
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'report' && caseData && !pdfPreviewUrl) {
+      setIsLoadingPreview(true);
+      getCasePdfPreviewUrl(caseData, forensicResult)
+        .then(url => {
+          setPdfPreviewUrl(url);
+          setIsLoadingPreview(false);
+        })
+        .catch(err => {
+          console.error("Preview generation error:", err);
+          setIsLoadingPreview(false);
+        });
+    }
+  }, [activeTab, caseData, forensicResult, pdfPreviewUrl]);
 
   const tabs = [
     { id: 'overview', label: 'Executive Synthesis', shortLabel: 'Overview', icon: ShieldCheck },
@@ -190,23 +221,25 @@ export const CaseDetail: React.FC<CaseDetailProps> = ({ caseId, onBack }) => {
               <Printer className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Print Dossier</span>
             </button>
-            <a
-              href={`${base}/api/reports/${caseData.id}/pdf`}
-              download
-              className="flex items-center space-x-1.5 px-3 sm:px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-navy-950 font-bold text-xs tracking-wide shadow-md shadow-cyan-500/20 transition-all"
+            <button
+              onClick={handleDownloadPdf}
+              disabled={isDownloadingPdf}
+              className="flex items-center space-x-1.5 px-3 sm:px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-navy-950 font-bold text-xs tracking-wide shadow-md shadow-cyan-500/20 transition-all cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>Download PDF</span>
-            </a>
-            <a
-              href={`${base}/api/reports/${caseData.id}/preview`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-navy-950 hover:bg-slate-800 text-slate-200 border border-slate-700 text-xs font-medium transition-colors"
+              {isDownloadingPdf ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}
+              <span>{isDownloadingPdf ? 'Generating...' : 'Download PDF'}</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('report')}
+              className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-navy-950 hover:bg-slate-800 text-slate-200 border border-slate-700 text-xs font-medium transition-colors cursor-pointer"
             >
               <Eye className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Preview</span>
-            </a>
+            </button>
           </div>
         </div>
 
@@ -406,24 +439,39 @@ export const CaseDetail: React.FC<CaseDetailProps> = ({ caseId, onBack }) => {
                     <Printer className="w-3.5 h-3.5" />
                     <span>Print</span>
                   </button>
-                  <a
-                    href={`${base}/api/reports/${caseData.id}/pdf`}
-                    download
-                    className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-navy-950 font-bold text-xs tracking-wide shadow-lg shadow-cyan-500/20 transition-all"
+                  <button
+                    onClick={handleDownloadPdf}
+                    disabled={isDownloadingPdf}
+                    className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-navy-950 font-bold text-xs tracking-wide shadow-lg shadow-cyan-500/20 transition-all cursor-pointer"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Download PDF</span>
-                  </a>
+                    {isDownloadingPdf ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Download className="w-3.5 h-3.5" />
+                    )}
+                    <span>{isDownloadingPdf ? 'Generating PDF...' : 'Download PDF'}</span>
+                  </button>
                 </div>
               </div>
 
               {/* Embedded PDF Viewer */}
-              <div className="h-[480px] sm:h-[650px] md:h-[750px] w-full rounded-xl overflow-hidden border border-slate-800 bg-slate-900">
-                <iframe
-                  src={`${base}/api/reports/${caseData.id}/preview`}
-                  title="Forensic PDF Preview"
-                  className="w-full h-full border-none"
-                />
+              <div className="h-[480px] sm:h-[650px] md:h-[750px] w-full rounded-xl overflow-hidden border border-slate-800 bg-slate-900 flex items-center justify-center">
+                {isLoadingPreview ? (
+                  <div className="flex flex-col items-center justify-center space-y-2 text-slate-400 text-xs">
+                    <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+                    <span>Rendering certified forensic dossier preview...</span>
+                  </div>
+                ) : pdfPreviewUrl ? (
+                  <iframe
+                    src={pdfPreviewUrl}
+                    title="Forensic PDF Preview"
+                    className="w-full h-full border-none"
+                  />
+                ) : (
+                  <div className="text-slate-500 text-xs font-mono">
+                    Unable to load preview. Please click "Download PDF" above to view report.
+                  </div>
+                )}
               </div>
             </div>
           )}
