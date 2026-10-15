@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Search, ExternalLink, GitCompare, Layers, CheckCircle2, AlertTriangle, Eye } from 'lucide-react';
+import { Search, ExternalLink, GitCompare } from 'lucide-react';
 import { CandidateMatch } from '../types';
 import { SplitSlider } from './SplitSlider';
 import { DifferenceHeatmap } from './DifferenceHeatmap';
+import { resolveAssetUrl } from '../services/api';
 
 interface CandidateMatchesProps {
   originalImageUrl: string;
@@ -19,53 +20,55 @@ export const CandidateMatches: React.FC<CandidateMatchesProps> = ({
   const [comparisonMode, setComparisonMode] = useState<'split' | 'heatmap'>('split');
 
   return (
-    <div className="bg-navy-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+    <div className="bg-navy-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-6">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3 sm:pb-4">
         <div>
           <div className="flex items-center space-x-2">
-            <Search className="w-5 h-5 text-cyan-400" />
-            <h3 className="text-base font-bold text-white tracking-wide">Source Discovery & Reverse Image Matches</h3>
-            <span className="px-2 py-0.5 text-[10px] font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded">
-              REFERENCE INDEX & PERCEPTUAL MATCHING
+            <Search className="w-5 h-5 text-cyan-400 shrink-0" />
+            <h3 className="text-sm sm:text-base font-bold text-white tracking-wide">Source Discovery & Reverse Image Matches</h3>
+            <span className="px-2 py-0.5 text-[9px] sm:text-[10px] font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded">
+              PERCEPTUAL MATCHING
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-[11px] sm:text-xs text-slate-400 mt-1">
             Identifies source candidates, original wire images, or known doctored variations via multi-hash distance & visual feature matching.
           </p>
         </div>
 
-        <div className="text-xs font-mono text-slate-400">
+        <div className="text-[11px] sm:text-xs font-mono text-slate-400">
           Showing <strong className="text-cyan-400">{Math.min(3, candidates.length)}</strong> candidate matches
         </div>
       </div>
 
       {candidates.length > 0 ? (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           
           {/* Candidate Cards Grid (Up to 3) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
             {candidates.slice(0, 3).map((cand, idx) => {
               const isSelected = selectedCandidate?.id === cand.id;
+              const thumb = resolveAssetUrl(cand.thumbnail_url);
+
               return (
                 <div
                   key={idx}
                   onClick={() => setSelectedCandidate(cand)}
-                  className={`p-4 rounded-xl cursor-pointer transition-all border ${
+                  className={`p-3.5 sm:p-4 rounded-xl cursor-pointer transition-all border ${
                     isSelected
                       ? 'bg-cyan-500/10 border-cyan-500/50 shadow-lg shadow-cyan-500/10'
                       : 'bg-navy-950/70 border-slate-800 hover:border-slate-700'
                   }`}
                 >
                   {/* Candidate Thumbnail */}
-                  <div className="relative h-32 w-full rounded-lg overflow-hidden bg-navy-900 border border-slate-800 mb-3">
+                  <div className="relative h-28 sm:h-32 w-full rounded-lg overflow-hidden bg-navy-900 border border-slate-800 mb-2.5 sm:mb-3">
                     <img
-                      src={cand.thumbnail_url}
+                      src={thumb}
                       alt={cand.title}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-navy-950/90 text-cyan-400 border border-cyan-500/30">
+                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-mono font-bold bg-navy-950/90 text-cyan-400 border border-cyan-500/30">
                       {cand.similarity_percentage}% MATCH
                     </div>
                   </div>
@@ -73,10 +76,10 @@ export const CandidateMatches: React.FC<CandidateMatchesProps> = ({
                   {/* Title and Category */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono uppercase text-slate-400 font-semibold truncate">
+                      <span className="text-[9px] sm:text-[10px] font-mono uppercase text-slate-400 font-semibold truncate max-w-[60%]">
                         {cand.category}
                       </span>
-                      <span className="text-[10px] font-mono text-slate-500">
+                      <span className="text-[9px] sm:text-[10px] font-mono text-slate-500 truncate max-w-[38%]">
                         {cand.source_domain}
                       </span>
                     </div>
@@ -86,23 +89,23 @@ export const CandidateMatches: React.FC<CandidateMatchesProps> = ({
                     </h4>
 
                     {/* Similarity Measurements */}
-                    <div className="grid grid-cols-3 gap-1 pt-1 text-[10px] font-mono text-slate-400">
-                      <div className="bg-navy-900/80 p-1.5 rounded border border-slate-800 text-center">
-                        <span className="block text-slate-500 text-[9px]">pHash Dist</span>
+                    <div className="grid grid-cols-3 gap-1 pt-1 text-[9px] sm:text-[10px] font-mono text-slate-400">
+                      <div className="bg-navy-900/80 p-1 rounded border border-slate-800 text-center">
+                        <span className="block text-slate-500 text-[8px]">pHash</span>
                         <strong className="text-cyan-300">{cand.phash_distance}</strong>
                       </div>
-                      <div className="bg-navy-900/80 p-1.5 rounded border border-slate-800 text-center">
-                        <span className="block text-slate-500 text-[9px]">SSIM</span>
+                      <div className="bg-navy-900/80 p-1 rounded border border-slate-800 text-center">
+                        <span className="block text-slate-500 text-[8px]">SSIM</span>
                         <strong className="text-amber-300">{cand.ssim}</strong>
                       </div>
-                      <div className="bg-navy-900/80 p-1.5 rounded border border-slate-800 text-center">
-                        <span className="block text-slate-500 text-[9px]">Features</span>
+                      <div className="bg-navy-900/80 p-1 rounded border border-slate-800 text-center">
+                        <span className="block text-slate-500 text-[8px]">Features</span>
                         <strong className="text-violet-300">{cand.feature_matches}</strong>
                       </div>
                     </div>
 
                     {/* Source Link */}
-                    <div className="pt-2 flex items-center justify-between">
+                    <div className="pt-1.5 flex items-center justify-between">
                       <a
                         href={cand.source_url}
                         target="_blank"
@@ -110,13 +113,13 @@ export const CandidateMatches: React.FC<CandidateMatchesProps> = ({
                         onClick={(e) => e.stopPropagation()}
                         className="text-[11px] text-cyan-400 hover:text-cyan-300 flex items-center space-x-1"
                       >
-                        <span className="truncate max-w-[150px]">Source Wire</span>
+                        <span className="truncate max-w-[120px] sm:max-w-[150px]">Source Wire</span>
                         <ExternalLink className="w-3 h-3 shrink-0" />
                       </a>
                       
                       {isSelected && (
-                        <span className="text-[10px] font-mono text-cyan-400 font-bold">
-                          ACTIVE INSPECTION
+                        <span className="text-[9px] sm:text-[10px] font-mono text-cyan-400 font-bold">
+                          ACTIVE
                         </span>
                       )}
                     </div>
@@ -129,39 +132,39 @@ export const CandidateMatches: React.FC<CandidateMatchesProps> = ({
 
           {/* Interactive Comparison Studio for Selected Candidate */}
           {selectedCandidate && (
-            <div className="space-y-4 pt-2">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4">
+            <div className="space-y-3 sm:space-y-4 pt-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-t border-slate-800 pt-3 sm:pt-4">
                 <div>
-                  <h4 className="text-sm font-bold text-white flex items-center space-x-2">
-                    <GitCompare className="w-4 h-4 text-cyan-400" />
+                  <h4 className="text-xs sm:text-sm font-bold text-white flex items-center space-x-2">
+                    <GitCompare className="w-4 h-4 text-cyan-400 shrink-0" />
                     <span>Visual Comparison: Ingested Image vs. Candidate Source</span>
                   </h4>
-                  <p className="text-xs text-slate-400">
-                    Comparing with candidate: <strong className="text-cyan-300">{selectedCandidate.title}</strong> ({selectedCandidate.relationship})
+                  <p className="text-[11px] sm:text-xs text-slate-400">
+                    Comparing with candidate: <strong className="text-cyan-300">{selectedCandidate.title}</strong>
                   </p>
                 </div>
 
                 {/* Split vs Heatmap toggle */}
-                <div className="flex items-center space-x-1 bg-navy-950 p-1 rounded-lg border border-slate-800">
+                <div className="flex items-center space-x-1 bg-navy-950 p-1 rounded-lg border border-slate-800 self-start sm:self-auto">
                   <button
                     onClick={() => setComparisonMode('split')}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded text-[11px] sm:text-xs font-medium transition-colors ${
                       comparisonMode === 'split'
                         ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    Swipe Split Slider
+                    Split Slider
                   </button>
                   <button
                     onClick={() => setComparisonMode('heatmap')}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                    className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded text-[11px] sm:text-xs font-medium transition-colors ${
                       comparisonMode === 'heatmap'
                         ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    Difference Heatmap
+                    Diff Heatmap
                   </button>
                 </div>
               </div>
@@ -169,16 +172,16 @@ export const CandidateMatches: React.FC<CandidateMatchesProps> = ({
               {comparisonMode === 'split' ? (
                 <SplitSlider
                   leftImage={originalImageUrl}
-                  rightImage={selectedCandidate.thumbnail_url}
+                  rightImage={resolveAssetUrl(selectedCandidate.thumbnail_url)}
                   leftLabel="Ingested Evidence Image"
                   rightLabel={`Candidate: ${selectedCandidate.title}`}
-                  heightClass="h-[460px]"
+                  heightClass="h-[270px] sm:h-[380px] md:h-[460px]"
                 />
               ) : (
                 <DifferenceHeatmap
                   originalImage={originalImageUrl}
-                  diffArtifactUrl={selectedCandidate.diff_artifact_rel_path ? `/vault/${selectedCandidate.diff_artifact_rel_path}` : null}
-                  candidateImage={selectedCandidate.thumbnail_url}
+                  diffArtifactUrl={selectedCandidate.diff_artifact_rel_path ? resolveAssetUrl(`/vault/${selectedCandidate.diff_artifact_rel_path}`) : null}
+                  candidateImage={resolveAssetUrl(selectedCandidate.thumbnail_url)}
                   candidateTitle={selectedCandidate.title}
                   similarityPct={selectedCandidate.similarity_percentage}
                   ssim={selectedCandidate.ssim}

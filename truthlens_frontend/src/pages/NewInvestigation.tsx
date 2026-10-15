@@ -365,11 +365,11 @@ export const NewInvestigation: React.FC<NewInvestigationProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end space-x-3 pt-2">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-2">
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2.5 rounded-xl bg-navy-950 hover:bg-slate-800 text-slate-300 text-xs font-medium border border-slate-800 transition-colors"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-navy-950 hover:bg-slate-800 text-slate-300 text-xs font-medium border border-slate-800 transition-colors text-center"
             >
               Cancel
             </button>
@@ -377,9 +377,9 @@ export const NewInvestigation: React.FC<NewInvestigationProps> = ({
             <button
               type="submit"
               disabled={!file}
-              className="flex items-center space-x-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-white font-bold text-xs tracking-wide shadow-lg shadow-cyan-500/25 transition-all"
+              className="w-full sm:w-auto flex items-center justify-center space-x-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-white font-bold text-xs tracking-wide shadow-lg shadow-cyan-500/25 transition-all"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-4 h-4 shrink-0" />
               <span>Launch Ingestion & Analysis</span>
             </button>
           </div>

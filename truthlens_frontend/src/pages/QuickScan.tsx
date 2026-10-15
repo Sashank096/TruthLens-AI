@@ -221,8 +221,8 @@ export const QuickScan: React.FC = () => {
         <div className="space-y-6">
           
           {/* Quick Sub-navigation */}
-          <div className="border-b border-slate-800 overflow-x-auto">
-            <div className="flex space-x-2 pb-2">
+          <div className="border-b border-slate-800 overflow-x-auto pb-2 scrollbar-none">
+            <div className="flex space-x-2 pb-1">
               {[
                 { id: 'overview', label: 'Overview & Risk', icon: ShieldCheck },
                 { id: 'ela', label: 'Error Level (ELA)', icon: Flame },
@@ -238,13 +238,13 @@ export const QuickScan: React.FC = () => {
                   <button
                     key={t.id}
                     onClick={() => setActiveTab(t.id)}
-                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-colors ${
                       isAct
                         ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    <Icon className="w-3.5 h-3.5" />
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
                     <span>{t.label}</span>
                   </button>
                 );

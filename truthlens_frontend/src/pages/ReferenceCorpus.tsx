@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Database, ExternalLink, Calendar, Hash, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { getApiBaseUrl, resolveAssetUrl } from '../services/api';
+import { BROWSER_BENCHMARKS } from '../services/browserForensics';
 
 interface ReferenceBenchmark {
   id: string;
@@ -11,6 +13,7 @@ interface ReferenceBenchmark {
   category: string;
   notes: string;
   type: string;
+  image_url?: string;
 }
 
 export const ReferenceCorpus: React.FC = () => {
@@ -18,16 +21,41 @@ export const ReferenceCorpus: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/reference/list')
-      .then(res => res.json())
+    const base = getApiBaseUrl();
+    fetch(`${base}/api/reference/list`, { signal: AbortSignal.timeout(5000) })
+      .then(res => {
+        if (!res.ok) throw new Error("Backend unavailable");
+        return res.json();
+      })
       .then(data => {
-        setItems(data.items || []);
+        if (data.items && data.items.length > 0) {
+          setItems(data.items);
+        } else {
+          fallbackToBenchmarks();
+        }
         setLoading(false);
       })
       .catch(err => {
-        console.error("Failed to load reference corpus:", err);
+        console.warn("Failed to load reference corpus from backend, using benchmark index:", err);
+        fallbackToBenchmarks();
         setLoading(false);
       });
+
+    function fallbackToBenchmarks() {
+      const benchmarkItems: ReferenceBenchmark[] = BROWSER_BENCHMARKS.map((b) => ({
+        id: b.id,
+        filename: b.id,
+        title: b.title,
+        source_url: b.source_url,
+        source_domain: b.source_domain,
+        publish_date: b.publish_date,
+        category: b.category,
+        notes: b.notes,
+        type: b.category.toLowerCase().includes('original') ? 'original' : 'spliced',
+        image_url: b.thumbnail_url
+      }));
+      setItems(benchmarkItems);
+    }
   }, []);
 
   return (
@@ -60,7 +88,7 @@ export const ReferenceCorpus: React.FC = () => {
             >
               <div className="h-44 w-full bg-navy-950 relative border-b border-slate-800">
                 <img
-                  src={`/api/reference/file/${item.filename}`}
+                  src={item.image_url ? item.image_url : resolveAssetUrl(`/api/reference/file/${item.filename}`)}
                   alt={item.title}
                   className="w-full h-full object-cover"
                 />
