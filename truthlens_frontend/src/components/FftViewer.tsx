@@ -8,8 +8,8 @@ interface FftViewerProps {
 }
 
 export const FftViewer: React.FC<FftViewerProps> = ({ fftSummary }) => {
-  const rawPath = fftSummary.fft_artifact_rel_path;
-  const spectrogramUrl = resolveAssetUrl(rawPath.startsWith('data:') ? rawPath : `/vault/${rawPath}`);
+  const rawPath = fftSummary?.fft_artifact_rel_path || '';
+  const spectrogramUrl = rawPath ? resolveAssetUrl(rawPath.startsWith('data:') ? rawPath : `/vault/${rawPath}`) : '';
 
   return (
     <div className="bg-navy-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-6">

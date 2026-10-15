@@ -8,8 +8,8 @@ interface VerifiedFactsCardProps {
 }
 
 export const VerifiedFactsCard: React.FC<VerifiedFactsCardProps> = ({
-  verifiedFacts,
-  estimates
+  verifiedFacts = [],
+  estimates = []
 }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

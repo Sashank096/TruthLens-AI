@@ -39,23 +39,27 @@ export const CaseDetail: React.FC<CaseDetailProps> = ({ caseId, onBack }) => {
   const [isLoadingPreview, setIsLoadingPreview] = useState<boolean>(false);
 
   const fetchCaseDetails = async () => {
+    setLoading(true);
     const base = getApiBaseUrl();
     try {
       const res = await fetch(`${base}/api/cases/${caseId}`, {
-        signal: AbortSignal.timeout(3000)
+        signal: AbortSignal.timeout(4000)
       });
       if (res.ok) {
         const contentType = res.headers.get("content-type") || "";
         if (contentType.includes("application/json")) {
           const data = await res.json();
-          setCaseData(data.case);
-          setNotes(data.case.notes || '');
-          setCaseStatus(data.case.status || 'Under Investigation');
-          return;
+          if (data && data.case) {
+            setCaseData(data.case);
+            setNotes(data.case.notes || '');
+            setCaseStatus(data.case.status || 'Under Investigation');
+            setLoading(false);
+            return;
+          }
         }
       }
-    } catch {
-      // Fallback
+    } catch (e) {
+      console.warn("Backend case fetch failed, falling back to local storage:", e);
     }
 
     const local = getLocalCaseById(caseId);
@@ -343,7 +347,7 @@ export const CaseDetail: React.FC<CaseDetailProps> = ({ caseId, onBack }) => {
           {activeTab === 'ela' && (
             <ElaViewer
               originalImageUrl={originalImageUrl}
-              elaSummary={forensicResult.ela_summary}
+              elaSummary={forensicResult.ela_summary || (forensicResult as any).ela || {}}
               storageRelPath={forensicResult.storage_rel_path}
               onRecomputeEla={handleRecomputeEla}
             />
@@ -351,22 +355,22 @@ export const CaseDetail: React.FC<CaseDetailProps> = ({ caseId, onBack }) => {
 
           {/* TAB 3: 2D FFT FREQUENCY SPECTRUM */}
           {activeTab === 'fft' && (
-            <FftViewer fftSummary={forensicResult.fft_summary} />
+            <FftViewer fftSummary={forensicResult.fft_summary || (forensicResult as any).fft || {}} />
           )}
 
           {/* TAB 4: SENSOR NOISE */}
           {activeTab === 'noise' && (
-            <NoiseViewer noiseSummary={forensicResult.noise_summary} />
+            <NoiseViewer noiseSummary={forensicResult.noise_summary || (forensicResult as any).noise || {}} />
           )}
 
           {/* TAB 5: EXIF & GPS DOSSIER */}
           {activeTab === 'exif' && (
-            <ExifDossier metadata={forensicResult.metadata_summary} />
+            <ExifDossier metadata={forensicResult.metadata_summary || (forensicResult as any).metadata || {}} />
           )}
 
           {/* TAB 6: C2PA PROVENANCE */}
           {activeTab === 'c2pa' && (
-            <C2paDossier c2pa={forensicResult.c2pa_summary} />
+            <C2paDossier c2pa={forensicResult.c2pa_summary || (forensicResult as any).c2pa || {}} />
           )}
 
           {/* TAB 7: REVERSE MATCHES & CANDIDATE SOURCES */}

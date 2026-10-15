@@ -9,10 +9,10 @@ interface ExifDossierProps {
 export const ExifDossier: React.FC<ExifDossierProps> = ({ metadata }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const rawTags = Object.entries(metadata.raw_tags || {});
+  const rawTags = Object.entries(metadata?.raw_tags || {});
   const filteredTags = rawTags.filter(([key, val]) =>
     key.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    val.toLowerCase().includes(searchTerm.toLowerCase())
+    String(val).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (

@@ -17,8 +17,8 @@ export const ElaViewer: React.FC<ElaViewerProps> = ({
   storageRelPath,
   onRecomputeEla
 }) => {
-  const [quality, setQuality] = useState<number>(elaSummary.quality_evaluated || 95);
-  const [scale, setScale] = useState<number>(elaSummary.scale_factor || 18);
+  const [quality, setQuality] = useState<number>(elaSummary?.quality_evaluated || 95);
+  const [scale, setScale] = useState<number>(elaSummary?.scale_factor || 18);
   const [isRecomputing, setIsRecomputing] = useState(false);
   const [activeView, setActiveView] = useState<'split' | 'heatmap' | 'raw_ela'>('split');
 
@@ -32,16 +32,15 @@ export const ElaViewer: React.FC<ElaViewerProps> = ({
     }
   };
 
-  const heatmapUrl = resolveAssetUrl(
-    elaSummary.heatmap_artifact_rel_path.startsWith('data:') 
-      ? elaSummary.heatmap_artifact_rel_path 
-      : `/vault/${elaSummary.heatmap_artifact_rel_path}`
-  );
-  const rawElaUrl = resolveAssetUrl(
-    elaSummary.ela_artifact_rel_path.startsWith('data:')
-      ? elaSummary.ela_artifact_rel_path
-      : `/vault/${elaSummary.ela_artifact_rel_path}`
-  );
+  const heatmapRel = elaSummary?.heatmap_artifact_rel_path || '';
+  const heatmapUrl = heatmapRel
+    ? resolveAssetUrl(heatmapRel.startsWith('data:') ? heatmapRel : `/vault/${heatmapRel}`)
+    : '';
+
+  const rawElaRel = elaSummary?.ela_artifact_rel_path || '';
+  const rawElaUrl = rawElaRel
+    ? resolveAssetUrl(rawElaRel.startsWith('data:') ? rawElaRel : `/vault/${rawElaRel}`)
+    : '';
 
   return (
     <div className="bg-navy-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-6">

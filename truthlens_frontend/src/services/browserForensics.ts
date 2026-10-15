@@ -298,19 +298,34 @@ export const BROWSER_BENCHMARKS: CandidateMatch[] = [
   }
 ];
 
-// In-Browser Case Store (persists cases in localStorage)
+// In-Browser Case Store (persists cases in memory and localStorage)
 const LOCAL_CASES_KEY = 'truthlens_cases_db';
+const memoryCasesMap = new Map<string, Case>();
 
 export function getLocalCases(): Case[] {
+  let stored: Case[] = [];
   try {
     const raw = localStorage.getItem(LOCAL_CASES_KEY);
-    return raw ? JSON.parse(raw) : [];
+    stored = raw ? JSON.parse(raw) : [];
   } catch {
-    return [];
+    stored = [];
   }
+  // Merge memory cases that might not be in localStorage
+  for (const [id, c] of memoryCasesMap.entries()) {
+    if (!stored.find(s => s.id === id || s.case_number === id)) {
+      stored.unshift(c);
+    }
+  }
+  return stored;
 }
 
 export function saveLocalCase(newCase: Case): void {
+  // Always save in fast in-memory map
+  memoryCasesMap.set(newCase.id, newCase);
+  if (newCase.case_number) {
+    memoryCasesMap.set(newCase.case_number, newCase);
+  }
+
   const cases = getLocalCases();
   const existingIdx = cases.findIndex(c => c.id === newCase.id);
   if (existingIdx >= 0) {
@@ -318,10 +333,30 @@ export function saveLocalCase(newCase: Case): void {
   } else {
     cases.unshift(newCase);
   }
-  localStorage.setItem(LOCAL_CASES_KEY, JSON.stringify(cases));
+
+  try {
+    localStorage.setItem(LOCAL_CASES_KEY, JSON.stringify(cases));
+  } catch (err) {
+    console.warn("localStorage quota exceeded, pruning huge data URLs:", err);
+    try {
+      const pruned = cases.slice(0, 8).map(c => ({
+        ...c,
+        evidence: c.evidence?.map(e => ({
+          ...e,
+          storage_rel_path: e.storage_rel_path.startsWith('data:') ? '' : e.storage_rel_path
+        }))
+      }));
+      localStorage.setItem(LOCAL_CASES_KEY, JSON.stringify(pruned));
+    } catch {
+      // Memory map will keep it safe
+    }
+  }
 }
 
 export function getLocalCaseById(id: string): Case | null {
+  if (memoryCasesMap.has(id)) {
+    return memoryCasesMap.get(id)!;
+  }
   const cases = getLocalCases();
   return cases.find(c => c.id === id || c.case_number === id) || null;
 }

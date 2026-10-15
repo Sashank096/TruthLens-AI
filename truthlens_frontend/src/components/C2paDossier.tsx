@@ -27,7 +27,7 @@ export const C2paDossier: React.FC<C2paDossierProps> = ({ c2pa }) => {
 
         {/* Validation Status Badge */}
         <div>
-          {c2pa.c2pa_present ? (
+          {c2pa?.c2pa_present ? (
             <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>{c2pa.status}</span>
@@ -41,7 +41,7 @@ export const C2paDossier: React.FC<C2paDossierProps> = ({ c2pa }) => {
         </div>
       </div>
 
-      {c2pa.c2pa_present ? (
+      {c2pa?.c2pa_present ? (
         /* Manifest Details */
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
