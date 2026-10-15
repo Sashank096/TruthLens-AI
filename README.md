@@ -31,6 +31,8 @@
 
 Unlike superficial reverse image search engines or black-box "AI detectors" that guess without accountability, TruthLens AI combines **computational physics, compression error mechanics, optical frequency spectrums, cryptographic provenance (C2PA), and perceptual reverse source discovery** into a single, tamper-evident investigation dossier.
 
+Deployed Link:https://truthlensai-orcin.vercel.app/
+
 ---
 
 ## 🚨 The Problem: Why Digital Forensics is Broken
