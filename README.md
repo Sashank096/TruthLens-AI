@@ -23,7 +23,7 @@
 [![C2PA Standard](https://img.shields.io/badge/C2PA-Provenance%20Standard-purple.svg)](https://c2pa.org/)
 [![ReportLab 5.0](https://img.shields.io/badge/ReportLab-Courtroom%20PDF-red.svg)](https://www.reportlab.com/)
 
-**[🌐 Live GitHub Repository](https://github.com/Sashank096/truthlens-ai)** • **[⚡ Quick Triage Engine](http://127.0.0.1:5173)** • **[📑 Interactive Swagger API](http://127.0.0.1:8000/docs)** • **[🐳 Docker Deployment](#-docker--container-orchestration)**
+**[🚀 Live Web App](https://truthlensai-orcin.vercel.app/)** • **[🌐 GitHub Repository](https://github.com/Sashank096/truthlens-ai)** • **[⚡ Quick Triage Engine](https://truthlensai-orcin.vercel.app/)** • **[📑 Interactive Swagger API](http://127.0.0.1:8000/docs)** • **[🐳 Docker](#-docker--container-orchestration)**
 
 </div>
 
@@ -31,11 +31,11 @@
 
 ## 📌 Executive Summary
 
+> 🚀 **Live Production Deployment**: [https://truthlensai-orcin.vercel.app/](https://truthlensai-orcin.vercel.app/)
+
 **TruthLens AI** is an enterprise-grade digital image forensics workstation and evidence custody platform engineered for **cyber incident responders, intelligence analysts, investigative journalists, law enforcement, and legal counsel**.
 
 Unlike superficial reverse image search engines or black-box "AI detectors" that guess without accountability, TruthLens AI combines **computational physics, compression error mechanics, optical frequency spectrums, cryptographic provenance (C2PA), and perceptual reverse source discovery** into a single, tamper-evident investigation dossier.
-
-Deployed Link:https://truthlensai-orcin.vercel.app/
 
 ---
 
