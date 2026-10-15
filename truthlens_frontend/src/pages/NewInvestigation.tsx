@@ -1,5 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { UploadCloud, ShieldCheck, FileCheck, AlertCircle, ArrowRight, Loader2, Sparkles, Hash } from 'lucide-react';
+import { UploadCloud, ShieldCheck, FileCheck, AlertCircle, ArrowRight, Loader2, Sparkles, Hash, Cpu } from 'lucide-react';
+import { getApiBaseUrl } from '../services/api';
+import { executeBrowserIngestion } from '../services/browserForensics';
 
 interface NewInvestigationProps {
   onCaseCreated: (caseId: string) => void;
@@ -59,7 +61,7 @@ export const NewInvestigation: React.FC<NewInvestigationProps> = ({
     "Executing multi-channel Error Level Analysis (ELA)...",
     "Running 2D FFT spectral decomposition & noise variance...",
     "Searching candidate sources in forensic reference corpus...",
-    "Synthesizing explainable findings & generating PDF report..."
+    "Synthesizing explainable findings & generating certified report..."
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,54 +79,74 @@ export const NewInvestigation: React.FC<NewInvestigationProps> = ({
     setErrorMessage(null);
     setActiveStep(0);
 
-    // Simulate animated step progression for UI responsiveness
     const stepInterval = setInterval(() => {
       setActiveStep((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
-    }, 700);
+    }, 600);
+
+    const base = getApiBaseUrl();
 
     try {
-      // Step 1: Create Case container
-      const caseFormData = new FormData();
-      caseFormData.append('title', title);
-      caseFormData.append('examiner', examiner);
-      caseFormData.append('priority', priority);
-      caseFormData.append('tags', tags);
-      caseFormData.append('notes', notes);
+      // First try cloud/local FastAPI backend
+      let backendSuccess = false;
+      let caseId = '';
 
-      const caseRes = await fetch('/api/cases', {
-        method: 'POST',
-        body: caseFormData
-      });
+      try {
+        const caseFormData = new FormData();
+        caseFormData.append('title', title);
+        caseFormData.append('examiner', examiner);
+        caseFormData.append('priority', priority);
+        caseFormData.append('tags', tags);
+        caseFormData.append('notes', notes);
 
-      if (!caseRes.ok) {
-        throw new Error("Failed to create case container.");
+        const caseRes = await fetch(`${base}/api/cases`, {
+          method: 'POST',
+          body: caseFormData,
+          signal: AbortSignal.timeout(5000)
+        });
+
+        if (caseRes.ok) {
+          const contentType = caseRes.headers.get("content-type") || "";
+          if (contentType.includes("application/json")) {
+            const caseData = await caseRes.json();
+            caseId = caseData.case.id;
+
+            // Ingest evidence
+            const evidenceFormData = new FormData();
+            evidenceFormData.append('file', file);
+            evidenceFormData.append('ela_quality', '95');
+            evidenceFormData.append('ela_scale', '18');
+
+            const ingestRes = await fetch(`${base}/api/cases/${caseId}/evidence`, {
+              method: 'POST',
+              body: evidenceFormData,
+              signal: AbortSignal.timeout(20000)
+            });
+
+            if (ingestRes.ok) {
+              backendSuccess = true;
+            }
+          }
+        }
+      } catch (backendErr) {
+        console.warn("FastAPI backend not reachable, seamlessly executing via client-side engine:", backendErr);
       }
 
-      const caseData = await caseRes.json();
-      const caseId = caseData.case.id;
-
-      // Step 2: Ingest evidence image into case
-      const evidenceFormData = new FormData();
-      evidenceFormData.append('file', file);
-      evidenceFormData.append('ela_quality', '95');
-      evidenceFormData.append('ela_scale', '18');
-
-      const ingestRes = await fetch(`/api/cases/${caseId}/evidence`, {
-        method: 'POST',
-        body: evidenceFormData
-      });
-
-      if (!ingestRes.ok) {
-        throw new Error("Failed to ingest evidence image into case.");
+      // If backend was not reachable or returned non-JSON/404, fallback to client-side engine!
+      if (!backendSuccess) {
+        const parsedTags = tags.split(',').map(t => t.trim()).filter(Boolean);
+        const localCase = await executeBrowserIngestion(
+          { title, examiner, priority, tags: parsedTags, notes },
+          file
+        );
+        caseId = localCase.id;
       }
 
       clearInterval(stepInterval);
       setActiveStep(steps.length - 1);
 
-      // Brief delay to let investigator see final verified state
       setTimeout(() => {
         onCaseCreated(caseId);
-      }, 600);
+      }, 500);
 
     } catch (err: any) {
       clearInterval(stepInterval);
@@ -179,7 +201,7 @@ export const NewInvestigation: React.FC<NewInvestigationProps> = ({
           </div>
 
           <div className="text-[11px] font-mono text-slate-500">
-            Step {activeStep + 1} of {steps.length} • All operations run genuine computer vision models
+            Step {activeStep + 1} of {steps.length} • Multi-modal forensic evaluation
           </div>
         </div>
       ) : (

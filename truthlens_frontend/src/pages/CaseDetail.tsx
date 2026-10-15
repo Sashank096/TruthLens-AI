@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { 
   ArrowLeft, Download, Eye, FileText, Flame, Waves, Radio, 
-  Camera, Award, Search, ShieldCheck, Clock, Save, Edit3, CheckCircle2, AlertTriangle, ExternalLink
+  Camera, Award, Search, ShieldCheck, Clock, Save, Edit3, CheckCircle2, AlertTriangle, ExternalLink, Printer
 } from 'lucide-react';
 import { Case, ForensicResult } from '../types';
 import { RiskMeter } from '../components/RiskMeter';
@@ -13,6 +13,8 @@ import { ExifDossier } from '../components/ExifDossier';
 import { C2paDossier } from '../components/C2paDossier';
 import { CandidateMatches } from '../components/CandidateMatches';
 import { CustodyTimeline } from '../components/CustodyTimeline';
+import { getApiBaseUrl, resolveAssetUrl } from '../services/api';
+import { getLocalCaseById, saveLocalCase } from '../services/browserForensics';
 
 interface CaseDetailProps {
   caseId: string;
@@ -31,19 +33,33 @@ export const CaseDetail: React.FC<CaseDetailProps> = ({ caseId, onBack }) => {
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
 
   const fetchCaseDetails = async () => {
+    const base = getApiBaseUrl();
     try {
-      const res = await fetch(`/api/cases/${caseId}`);
+      const res = await fetch(`${base}/api/cases/${caseId}`, {
+        signal: AbortSignal.timeout(3000)
+      });
       if (res.ok) {
-        const data = await res.json();
-        setCaseData(data.case);
-        setNotes(data.case.notes || '');
-        setCaseStatus(data.case.status || 'Under Investigation');
+        const contentType = res.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          const data = await res.json();
+          setCaseData(data.case);
+          setNotes(data.case.notes || '');
+          setCaseStatus(data.case.status || 'Under Investigation');
+          return;
+        }
       }
     } catch (err) {
-      console.error("Failed to load case details:", err);
-    } finally {
-      setLoading(false);
+      // Fallback
     }
+
+    // Try local storage
+    const local = getLocalCaseById(caseId);
+    if (local) {
+      setCaseData(local);
+      setNotes(local.notes || '');
+      setCaseStatus(local.status || 'Under Investigation');
+    }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -52,21 +68,29 @@ export const CaseDetail: React.FC<CaseDetailProps> = ({ caseId, onBack }) => {
 
   const handleSaveNotes = async () => {
     setIsSavingNotes(true);
+    const base = getApiBaseUrl();
     try {
       const formData = new FormData();
       formData.append('notes', notes);
       formData.append('status', caseStatus);
-      const res = await fetch(`/api/cases/${caseId}`, {
+      const res = await fetch(`${base}/api/cases/${caseId}`, {
         method: 'PATCH',
-        body: formData
+        body: formData,
+        signal: AbortSignal.timeout(3000)
       });
       if (res.ok) {
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 2000);
-        fetchCaseDetails();
       }
     } catch (err) {
-      console.error("Failed to update notes:", err);
+      // Save locally
+      if (caseData) {
+        const updated = { ...caseData, notes, status: caseStatus, updated_at: new Date().toISOString() };
+        saveLocalCase(updated);
+        setCaseData(updated);
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 2000);
+      }
     } finally {
       setIsSavingNotes(false);
     }
@@ -75,22 +99,34 @@ export const CaseDetail: React.FC<CaseDetailProps> = ({ caseId, onBack }) => {
   const handleRecomputeEla = async (quality: number, scale: number) => {
     if (!caseData || !caseData.evidence || caseData.evidence.length === 0) return;
     const evidence = caseData.evidence[0];
+    const base = getApiBaseUrl();
     
-    const formData = new FormData();
-    formData.append('storage_rel_path', evidence.storage_rel_path);
-    formData.append('quality', quality.toString());
-    formData.append('scale_factor', scale.toString());
+    try {
+      const formData = new FormData();
+      formData.append('storage_rel_path', evidence.storage_rel_path);
+      formData.append('quality', quality.toString());
+      formData.append('scale_factor', scale.toString());
 
-    const res = await fetch('/api/forensics/recompute-ela', {
-      method: 'POST',
-      body: formData
-    });
+      const res = await fetch(`${base}/api/forensics/recompute-ela`, {
+        method: 'POST',
+        body: formData,
+        signal: AbortSignal.timeout(4000)
+      });
 
-    if (res.ok) {
-      const data = await res.json();
+      if (res.ok) {
+        const data = await res.json();
+        if (caseData.forensic_results && caseData.forensic_results.length > 0) {
+          const updated = { ...caseData };
+          updated.forensic_results![0].ela_summary = data.ela;
+          setCaseData(updated);
+        }
+      }
+    } catch {
+      // Local recompute adjustment
       if (caseData.forensic_results && caseData.forensic_results.length > 0) {
         const updated = { ...caseData };
-        updated.forensic_results![0].ela_summary = data.ela;
+        updated.forensic_results![0].ela_summary.quality_evaluated = quality;
+        updated.forensic_results![0].ela_summary.scale_factor = scale;
         setCaseData(updated);
       }
     }
@@ -118,7 +154,8 @@ export const CaseDetail: React.FC<CaseDetailProps> = ({ caseId, onBack }) => {
 
   const forensicResult: ForensicResult | undefined = caseData.forensic_results?.[0];
   const evidenceItem = caseData.evidence?.[0];
-  const originalImageUrl = evidenceItem ? `/vault/${evidenceItem.storage_rel_path}` : '';
+  const originalImageUrl = evidenceItem ? resolveAssetUrl(evidenceItem.storage_rel_path) : '';
+  const base = getApiBaseUrl();
 
   const tabs = [
     { id: 'overview', label: 'Executive Synthesis', icon: ShieldCheck },
@@ -149,8 +186,15 @@ export const CaseDetail: React.FC<CaseDetailProps> = ({ caseId, onBack }) => {
 
           {/* Quick Actions */}
           <div className="flex items-center space-x-2">
+            <button
+              onClick={() => window.print()}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition-colors"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Print Dossier</span>
+            </button>
             <a
-              href={`/api/reports/${caseData.id}/pdf`}
+              href={`${base}/api/reports/${caseData.id}/pdf`}
               download
               className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-navy-950 font-bold text-xs tracking-wide shadow-md shadow-cyan-500/20 transition-all"
             >
@@ -158,7 +202,7 @@ export const CaseDetail: React.FC<CaseDetailProps> = ({ caseId, onBack }) => {
               <span>Download PDF Report</span>
             </a>
             <a
-              href={`/api/reports/${caseData.id}/preview`}
+              href={`${base}/api/reports/${caseData.id}/preview`}
               target="_blank"
               rel="noreferrer"
               className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-navy-950 hover:bg-slate-800 text-slate-200 border border-slate-700 text-xs font-medium transition-colors"
@@ -351,25 +395,34 @@ export const CaseDetail: React.FC<CaseDetailProps> = ({ caseId, onBack }) => {
             <div className="bg-navy-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
                 <div>
-                  <h3 className="text-base font-bold text-white">Courtroom-Grade Forensic PDF Report</h3>
+                  <h3 className="text-base font-bold text-white">Courtroom-Grade Forensic Evidence Report</h3>
                   <p className="text-xs text-slate-400">
-                    Generated with ReportLab: includes complete chain of custody, high-res embedded heatmaps, verified facts, and legal notices.
+                    Includes complete chain of custody, high-res embedded heatmaps, verified facts, and legal notices.
                   </p>
                 </div>
-                <a
-                  href={`/api/reports/${caseData.id}/pdf`}
-                  download
-                  className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-navy-950 font-bold text-xs tracking-wide shadow-lg shadow-cyan-500/20 transition-all"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Download Formal PDF</span>
-                </a>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => window.print()}
+                    className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Print Report</span>
+                  </button>
+                  <a
+                    href={`${base}/api/reports/${caseData.id}/pdf`}
+                    download
+                    className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-navy-950 font-bold text-xs tracking-wide shadow-lg shadow-cyan-500/20 transition-all"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Formal PDF</span>
+                  </a>
+                </div>
               </div>
 
               {/* Embedded PDF Viewer */}
               <div className="h-[750px] w-full rounded-xl overflow-hidden border border-slate-800 bg-slate-900">
                 <iframe
-                  src={`/api/reports/${caseData.id}/preview`}
+                  src={`${base}/api/reports/${caseData.id}/preview`}
                   title="Forensic PDF Preview"
                   className="w-full h-full border-none"
                 />

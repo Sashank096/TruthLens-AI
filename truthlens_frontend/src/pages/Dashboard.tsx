@@ -4,6 +4,8 @@ import {
   Search, ArrowRight, ExternalLink, HardDrive, Cpu, CheckCircle2 
 } from 'lucide-react';
 import { Case } from '../types';
+import { getApiBaseUrl } from '../services/api';
+import { getLocalCases } from '../services/browserForensics';
 
 interface DashboardProps {
   onSelectCase: (caseId: string) => void;
@@ -20,15 +22,29 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
 
   const fetchCases = async () => {
+    const base = getApiBaseUrl();
+    let combinedCases: Case[] = [...getLocalCases()];
+
     try {
-      const res = await fetch('/api/cases');
+      const res = await fetch(`${base}/api/cases`, {
+        signal: AbortSignal.timeout(3000)
+      });
       if (res.ok) {
-        const data = await res.json();
-        setCases(data.cases || []);
+        const contentType = res.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          const data = await res.json();
+          const serverCases: Case[] = data.cases || [];
+          
+          // Merge avoiding duplicates
+          const serverIds = new Set(serverCases.map(c => c.id));
+          const uniqueLocals = combinedCases.filter(c => !serverIds.has(c.id));
+          combinedCases = [...serverCases, ...uniqueLocals];
+        }
       }
     } catch (err) {
-      console.error("Failed to fetch cases:", err);
+      // Backend offline, fallback to local cases
     } finally {
+      setCases(combinedCases);
       setLoading(false);
     }
   };
@@ -37,7 +53,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
     fetchCases();
   }, []);
 
-  // Compute stats
   const totalCases = cases.length;
   const highRiskCases = cases.filter(c => (c.latest_risk_score || 0) >= 60).length;
   const totalEvidence = cases.reduce((acc, c) => acc + (c.evidence_count || 0), 0);

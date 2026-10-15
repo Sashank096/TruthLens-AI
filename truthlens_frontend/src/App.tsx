@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
+import { BackendStatusBanner } from './components/BackendStatusBanner';
 import { Dashboard } from './pages/Dashboard';
 import { NewInvestigation } from './pages/NewInvestigation';
 import { CaseDetail } from './pages/CaseDetail';
@@ -10,6 +11,7 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [isDark, setIsDark] = useState<boolean>(true);
+  const [refreshKey, setRefreshKey] = useState<number>(0);
 
   // Sync dark class to root document element
   useEffect(() => {
@@ -42,8 +44,11 @@ export const App: React.FC = () => {
         setIsDark={setIsDark}
       />
 
+      {/* Backend Engine Status Banner */}
+      <BackendStatusBanner onEngineChange={() => setRefreshKey(prev => prev + 1)} />
+
       {/* Main Content Area */}
-      <main className="pb-16">
+      <main className="pb-16" key={refreshKey}>
         {activeTab === 'dashboard' && (
           <Dashboard
             onSelectCase={handleSelectCase}
