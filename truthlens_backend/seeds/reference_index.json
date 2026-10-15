@@ -1,0 +1,46 @@
+[
+  {
+    "id": "REF-001-ARCHIVE",
+    "filename": "ref_presidential_archive.jpg",
+    "title": "Archived Presidential Press Conference (Original Wire)",
+    "source_url": "https://www.reuters.com/factcheck/archive/original-press-briefing-2024",
+    "source_domain": "reuters.com",
+    "publish_date": "2024-04-12T10:00:00Z",
+    "category": "Verified Original",
+    "notes": "Verified authentic AP/Reuters pool camera photograph. Continuous camera noise, standard JPEG table.",
+    "type": "original"
+  },
+  {
+    "id": "REF-002-SPLICED",
+    "filename": "ref_spliced_doctored.jpg",
+    "title": "Doctored Incident Photograph (Manipulated Background Sign)",
+    "source_url": "https://factcheck.afp.com/investigations/viral-press-briefing-altered-sign",
+    "source_domain": "factcheck.afp.com",
+    "publish_date": "2024-04-14T14:30:00Z",
+    "category": "Known Doctored Variant",
+    "notes": "Altered version widely shared on social media with inserted warning sign and smoothed lighting.",
+    "type": "spliced"
+  },
+  {
+    "id": "REF-003-DIFFUSION",
+    "filename": "ref_diffusion_synthetic.jpg",
+    "title": "Synthetically Generated Diplomatic Hallway (Diffusion Benchmark)",
+    "source_url": "https://archive.org/details/truthlens-ai-benchmark-corpus-synth-03",
+    "source_domain": "archive.org",
+    "publish_date": "2024-05-01T08:15:00Z",
+    "category": "Synthetic AI Benchmark",
+    "notes": "Generated using Stable Diffusion XL with latent upscaling. Distinct periodic FFT lattice.",
+    "type": "synthetic"
+  },
+  {
+    "id": "REF-004-AUTHENTIC-PORTRAIT",
+    "filename": "ref_authentic_id.jpg",
+    "title": "Official Diplomatic Identity Archive Photo",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Diplomatic_Official_Portrait_2023.jpg",
+    "source_domain": "commons.wikimedia.org",
+    "publish_date": "2023-11-20T16:00:00Z",
+    "category": "Archived Original",
+    "notes": "High-resolution studio portrait with Canon EOS 5D Mark IV EXIF tags.",
+    "type": "original"
+  }
+]

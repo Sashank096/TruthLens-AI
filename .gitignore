@@ -1,0 +1,49 @@
+# Python Virtual Environments
+.venv/
+.venv-1/
+venv/
+env/
+ENV/
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Node & Frontend Build
+node_modules/
+truthlens_frontend/node_modules/
+dist/
+truthlens_frontend/dist/
+.npm
+npm-debug.log*
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# Evidence Vault Generated Files (Preserve structure, avoid committing transient test runs)
+truthlens_backend/vault/originals/*
+!truthlens_backend/vault/originals/.gitkeep
+truthlens_backend/vault/artifacts/*
+!truthlens_backend/vault/artifacts/.gitkeep
+truthlens_backend/vault/reports/*
+!truthlens_backend/vault/reports/.gitkeep
+truthlens_backend/vault/*.db
+truthlens_backend/vault/*.db-journal
+
+# Previous Archive/Workspace items
+unanimous_app/
+unanimous_changed_files.zip
+
+# Vercel & Editor
+.vercel
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

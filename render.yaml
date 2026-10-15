@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: truthlens-api
+    runtime: docker
+    dockerfilePath: truthlens_backend/Dockerfile
+    dockerContext: truthlens_backend
+    plan: free
+    region: oregon
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true

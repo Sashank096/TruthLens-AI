@@ -1,0 +1,60 @@
+name: TruthLens AI CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-backend:
+    name: Test Forensic Backend (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Install System Dependencies for OpenCV
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1 libglib2.0-0
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r truthlens_backend/requirements.txt
+
+      - name: Run Backend Forensic Unit Tests
+        run: |
+          cd truthlens_backend
+          python test_backend.py
+
+  build-frontend:
+    name: Build Frontend (Vite + React + TS)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: truthlens_frontend/package.json
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd truthlens_frontend
+          npm ci
+
+      - name: Build Frontend Application
+        run: |
+          cd truthlens_frontend
+          npm run build
